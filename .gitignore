@@ -1,0 +1,39 @@
+# Build trees and generated CMake files
+build*/
+bootstrap/build/
+cmake-build-*/
+CMakeUserPresets.json
+
+# Distribution packages (published via GitHub Releases)
+dist/
+*.zip
+*.sha256
+
+# Locally provisioned toolchains and package caches
+.toolchain/
+.vcpkg/
+.conan/
+
+# IDE and editor state
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Generated binaries and runtime artifacts
+*.exe
+*.dll
+*.pdb
+*.obj
+*.o
+*.a
+*.lib
+*.log
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# Internal multi-agent orchestration config
+AGENTS.md

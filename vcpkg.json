@@ -1,0 +1,25 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "photo26",
+  "version-string": "0.1.0-bootstrap",
+  "description": "Reproducible native dependency manifest for Photo26",
+  "builtin-baseline": "eef0ef7bf4b2c0ddbf7be1a776f1bede94dfc861",
+  "dependencies": [
+    "libvips",
+    "libjpeg-turbo",
+    "libpng",
+    "libwebp",
+    "tiff",
+    "libheif",
+    "exiv2",
+    "lcms",
+    "pdfium",
+    "onnxruntime",
+    {
+      "name": "qtbase",
+      "default-features": true
+    },
+    "qtsvg",
+    "qtimageformats"
+  ]
+}
