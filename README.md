@@ -2,173 +2,176 @@
 
 # Photo26
 
-### Suite nativa de herramientas de imagen para Windows x64 — 100 % local, rápida y no destructiva
+### Native Windows x64 Image Toolbox — 100% Local, Fast, and Non-Destructive
 
 [![Platform](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-2D5F8A?style=flat-square&logo=windows)](https://github.com/JaviBlzq/Photo26/releases/latest)
 [![Language](https://img.shields.io/badge/C%2B%2B-20-35638A?style=flat-square&logo=cplusplus)](CMakeLists.txt)
 [![Framework](https://img.shields.io/badge/Qt-6.8.3%20Widgets-3B7562?style=flat-square&logo=qt)](docs/architecture.md)
-[![Offline](https://img.shields.io/badge/100%25%20Offline-Sin%20telemetr%C3%ADa-556270?style=flat-square)](docs/architecture.md)
+[![HEIF/AVIF](https://img.shields.io/badge/Apple%20HEIC%20%2F%20AVIF-libheif%201.19.7-8F6338?style=flat-square)](docs/feature-matrix.md)
+[![Offline](https://img.shields.io/badge/100%25%20Offline-Zero%20Telemetry-556270?style=flat-square)](docs/architecture.md)
 [![Release](https://img.shields.io/github/v/release/JaviBlzq/Photo26?style=flat-square&color=2D5F8A&label=Release)](https://github.com/JaviBlzq/Photo26/releases/latest)
 
-**19 herramientas fotográficas en una sola aplicación nativa**, inspirada en la simplicidad práctica de las cajas de herramientas de escritorio, sin nube, sin cuentas y sin sobrescribir tus archivos originales.
+**19 essential image tools in a single native desktop application** — including full out-of-the-box support for **Apple HEIC, HEIF/HIF, AVIF, macOS ICNS, and Apple ProRAW (DNG)**, with no cloud uploads, no accounts, and atomic non-destructive saving.
 
-[Descargar Portable](https://github.com/JaviBlzq/Photo26/releases/latest) · [Manual de usuario](docs/user-manual.md) · [Arquitectura](docs/architecture.md) · [Informe de pruebas](docs/test-report.md) · [Rendimiento](docs/performance-report.md)
+[Download Portable v1.1.0](https://github.com/JaviBlzq/Photo26/releases/latest) · [User Manual](docs/user-manual.md) · [Architecture](docs/architecture.md) · [Test Report](docs/test-report.md) · [Performance](docs/performance-report.md)
 
 </div>
 
 ---
 
-## Descarga rápida (Windows 10 / 11 x64)
+## Quick Download (Windows 10 / 11 x64)
 
-Photo26 se distribuye como **paquete portable autocontenido** — no requiere instalador, Qt SDK, Python ni permisos de administrador:
+Photo26 ships as a **self-contained portable package** — no installer, no Qt SDK, no Python, and no administrator privileges required:
 
-1. Descarga **`Photo26-v1.1.0-win64-portable.zip`** desde la página de [Releases](https://github.com/JaviBlzq/Photo26/releases/latest).
-2. Descomprime el archivo en cualquier carpeta (por ejemplo `C:\Photo26\`).
-3. Ejecuta **`photo26.exe`**.
+1. Download **`Photo26-v1.1.0-win64-portable.zip`** from the [Latest Release](https://github.com/JaviBlzq/Photo26/releases/latest).
+2. Extract it to any folder (for example `C:\Photo26\`).
+3. Run **`photo26.exe`**.
 
-> **Verificación de integridad:** Cada lanzamiento incluye su archivo `.sha256` oficial en los activos de la Release.
-
----
-
-## Por qué Photo26
-
-| Principio | Qué significa en la práctica |
-| :--- | :--- |
-| **100 % local y privado** | Todo el procesamiento ocurre en tu CPU/RAM local. Sin cuentas, sin telemetría, sin subir tus fotografías a servidores externos. |
-| **No destructivo por defecto** | Tus imágenes originales nunca se modifican sin confirmación. Toda escritura a disco es transaccional y atómica (`SafeFileWriter`). |
-| **Guardado limpio y directo** | Diálogos nativos de Windows («Guardar como…», «Guardar archivos…» y **«Guardar como ZIP…»**), nombres descriptivos sugeridos y recuerdo de la última carpeta. |
-| **Interfaz natural de escritorio** | Diseño sobrio en tema claro neutro (con modo oscuro opcional), arrastrar y soltar, vista previa interactiva con zoom/pan y cortina *Antes / Después*. |
-| **Núcleo desacoplado (`photo26-core`)** | Motor C++20 con cero dependencias de `Qt6::Widgets`, listo para compartir lógica con una futura CLI sin duplicar código. |
+> **Integrity verification:** Every release includes an official `.sha256` checksum asset.
 
 ---
 
-## Catálogo de herramientas (19 herramientas)
+## Why Photo26
 
-### Conversión y optimización
-| Herramienta | Capacidades principales |
+| Principle | What it means in practice |
 | :--- | :--- |
-| **Convertir formato** | Apple HEIC, HEIF/HIF, AVIF, Apple ICNS, lectura Apple ProRAW/DNG, PNG, JPEG, WebP, BMP, TIFF, GIF, ICO, PPM/PGM/PBM/XBM/XPM, rasterización vectorial SVG/SVGZ, aplanado de transparencia y conversión de perfiles ICC (`sRGB`, `Adobe RGB`, `Display P3`, `ProPhoto RGB`). |
-| **Comprimir imagen** | Control de calidad (`1..100`) en JPEG, PNG, WebP, **HEIC**, **HEIF** y **AVIF**, modo sin pérdida cuando el formato lo admite, tamaño objetivo aproximado en KiB y comparativa de peso original vs. final. |
-| **Optimizar para Web** | Generación responsive a `320`, `640`, `960`, `1280` y `1920 px` en WebP, **AVIF**, **HEIC**, JPEG o PNG sin ampliaciones, limpieza de metadatos y exportación en carpeta o ZIP. |
-| **Generador de Favicon e ICO** | Contenedor `.ico` multi-resolución (`16, 32, 48, 256 px`), icono **Apple macOS (`.icns`)**, paquete completo de PNGs (`16..512 px`) y `site.webmanifest` PWA. |
-| **Procesamiento por lotes** | Tubería asíncrona multi-hilo (conversión, redimensionado, color, marca de agua, metadatos, renombrado), presets JSON, progreso y cancelación cooperativa. |
-
-### Edición y geometría
-| Herramienta | Capacidades principales |
-| :--- | :--- |
-| **Recortar y enderezar** | Recorte interactivo sobre lienzo con regla de los tercios (`Libre`, `1:1`, `3:4`, `4:3`, `16:9`, `9:16`, `2:3`, `3:2`, `21:9` y personalizado), rotación `90°`/libre y volteo H/V. |
-| **Redimensionar y rotar** | Por píxeles, porcentaje o dimensiones máximas, con bloqueo de ampliaciones e interpolación `Lanczos-3` separable, `Bicúbica`, `Bilineal` y `Nearest` (soporte 16 bits `RGBA64`). |
-| **Ajustes de color y filtros** | Escala de grises Rec.709, B/N con tramado Floyd-Steinberg, sepia, inversión, brillo, contraste, saturación, gamma y exposición (EV) en 16 bits por canal. |
-| **Eliminar fondo / Transparencia** | Segmentación 100 % local sobre CPU (inundación conectada desde bordes en CIE L\*a\*b\*, Chroma Key y umbral de luminancia), suavizado gaussiano y reemplazo por transparencia o color sólido. |
-| **Marca de agua** | Texto o logotipo PNG, 10 posiciones (incluido mosaico), escala, opacidad, margen y rotación. |
-
-### Composición y documentos
-| Herramienta | Capacidades principales |
-| :--- | :--- |
-| **Combinar y collage** | Unión horizontal, vertical, cuadrícula y mosaico con márgenes, espaciado, alineación y fondos personalizables sin deformar proporciones. |
-| **Texto, marcos y bordes** | Superposición de texto, relleno exterior, bordes de color y esquinas redondeadas con canal alfa. |
-| **Imágenes a PDF** | Exportación local a PDF (`ISO 32000-1`) de una o múltiples páginas con tamaño (`A4`, `Letter`, `Legal`, `A3`, ajuste a imagen), orientación, márgenes y DPI. |
-| **Animación GIF / Secuencia** | Codificador binario `GIF89a` propio con retardo por fotograma, repeticiones (`NETSCAPE2.0`), tramado opcional y extracción de fotogramas. |
-| **Hoja de Sprites (Spritesheet)** | Empaquetado en atlas de cuadrícula y exportación del mapa de coordenadas JSON. |
-
-### Metadatos y utilidades
-| Herramienta | Capacidades principales |
-| :--- | :--- |
-| **Inspector y limpieza de metadatos** | Propiedades de disco vs. metadatos incrustados (`EXIF`, `XMP`, `IPTC`, `ICC`, `GPS`), edición de 15 campos, copia entre archivos, exportación/importación JSON (`photo26.metadata.v1`), limpieza total/selectiva sin recodificar JPEG/PNG/WebP y edición por lotes. |
-| **Extractor de paleta de colores** | Cuantización determinista k-means++ con códigos HEX/RGB, dominancia y exportación a JSON, variables CSS, GIMP `.gpl` y muestras PNG. |
-| **Comparador visual** | Lado a lado, deslizador *Antes / Después*, superposición, mapa de diferencias visuales y métricas `MAE`, `RMSE` y `PSNR`. |
-| **Renombrado masivo inteligente** | Patrones (`{name}`, `{num}`, `{date}`, `{width}`, `{height}`, `{ext}`), prefijos, sufijos, buscar/sustituir, vista previa en vivo y detección de conflictos. |
+| **100% local & private** | All decoding, pixel processing, metadata editing, and PDF/ZIP export run locally on your CPU and RAM. Zero telemetry, zero accounts, zero external services. |
+| **Full Apple & modern format support** | Native **HEIC**, **HEIF/HIF**, **AVIF** (`libheif 1.19.7` with HEVC & AV1 codecs bundled), **Apple ICNS**, and **Apple ProRAW / DNG** reading across all tools. |
+| **Non-destructive by default** | Original files are never overwritten without confirmation. Every write goes through atomic transactional staging (`SafeFileWriter`). |
+| **Clean desktop export workflow** | Native Windows dialogs (*Save As…*, *Save Files…*, and ***Save as ZIP…***), smart descriptive filenames, conflict preview, and remembered last export folder. |
+| **Clean, natural UI** | Neutral light desktop theme by default (with optional charcoal dark mode), contextual toolbar without redundant controls, drag & drop, zoom/pan canvas, and *Before / After* split view. |
+| **Decoupled C++20 engine (`photo26-core`)** | Zero dependency on `Qt6::Widgets`, ready to power a future CLI without duplicating processing logic. |
 
 ---
 
-## Formatos soportados y declaraciones honestas
+## All 19 Built-in Tools
 
-| Formato | Lectura | Escritura | Transparencia | Metadatos (`EXIF`/`XMP`/`IPTC`/`ICC`) | Notas |
-| :--- | :---: | :---: | :---: | :---: | :--- |
-| **Apple HEIC** (`.heic`, `.heics`) | **Sí** | **Sí** | **Sí** | EXIF · XMP · ICC | Nativo con `libheif 1.19.7` + HEVC (`libde265` / `x265` / `kvazaar`), calidad y lossless |
-| **HEIF / HIF** (`.heif`, `.hif`, `.heifs`) | **Sí** | **Sí** | **Sí** | EXIF · XMP · ICC | ISO/IEC 23008-12 completo en todas las herramientas |
-| **AVIF** (`.avif`, `.avis`) | **Sí** | **Sí** | **Sí** | EXIF · XMP · ICC | Nativo AV1 (`dav1d` / `aom` / `svt-av1` / `rav1e`), calidad y lossless |
-| **Apple ICNS** (`.icns`) | **Sí** | **Sí** | **Sí** | — | Iconos nativos de macOS (plugin `qicns`) |
-| **Apple ProRAW / DNG** (`.dng`) | **Sí** | No | — | EXIF · XMP · IPTC · ICC | Lectura del fotograma de mayor resolución y metadatos completos |
-| **JPEG** (`.jpg`, `.jpeg`) | Sí | Sí | Aplanado | EXIF · XMP · IPTC · ICC | Edición/limpieza sin recodificar el scan JPEG |
-| **PNG** (`.png`) | Sí | Sí | Sí (8/16 bits) | EXIF · XMP · ICC | Chunks `eXIf`, `iTXt`, `iCCP`, `pHYs` con CRC-32 |
-| **WebP** (`.webp`) | Sí | Sí | Sí | EXIF · XMP · ICC | Con pérdida y sin pérdida (`lossless`) |
-| **TIFF** (`.tif`, `.tiff`) | Sí | Sí | Sí | EXIF · XMP · IPTC · ICC | Limpieza directa en estructura IFD |
-| **GIF** (`.gif`) | Sí | Sí | Sí (1 bit) | — | Codificador animado `GIF89a` propio + extractor |
-| **ICO** (`.ico`) | Sí | Sí | Sí (32 bits) | — | Multi-resolución (`16..256 px`) + paquete PWA |
-| **BMP / PPM / PGM / PBM / XBM / XPM** | Sí | Sí | Según formato | — | Sin pérdida |
-| **SVG / SVGZ** | Sí | No | Sí | — | Rasterización con `QSvgRenderer`; no envuelve bitmaps en falso SVG |
-| **PDF** | No | Sí | Fondo de página | Título | Exportación de 1 o varias imágenes (`ISO 32000-1`) |
-
-> **Nota sobre eliminación de fondos:** La versión portable estándar v1.0 realiza la segmentación 100 % en CPU local (sin empaquetar modelos ONNX). **OCR** está expresamente excluido del alcance del proyecto.
-
----
-
-## Rendimiento real medido (Windows 11 x64)
-
-Mediciones reales tomadas sobre Windows 11 x64 (`AMD Ryzen 7 9800X3D`, paquete portable Release con `PATH` limpio):
-
-| Operación | Resultado medido |
+### Conversion & Optimization
+| Tool | Highlights |
 | :--- | :--- |
-| Arranque en frío de `photo26.exe` (portable) | **`376 – 384 ms`** |
-| Memoria en reposo (`1,500 ms`) | **`113.35 MiB`** Working Set · **`51.06 MiB`** Private Commit |
-| Redimensionado Lanczos-3 (`1920×1080 → 960×540`) | **`32 ms`** |
-| Carga PNG Full HD / Guardado WebP q85 Full HD | **`72 ms`** / **`77 ms`** |
-| Web Optimizer (5 variantes responsive WebP) | **`262 ms`** |
-| **Lote paralelo de 20 imágenes Full HD** (resize + color 16-bit + WebP, 4 hilos) | **`713 ms`** (`35.6 ms/img`, reducción `-73.9 %`, delta RAM `+0.75 MiB`) |
-| Suite automatizada (`CTest` + `QtTest`, 10/10 bloques) | **`437 – 500 ms`** (`100 % PASS`) |
+| **Format Converter** | Convert across **Apple HEIC, HEIF/HIF, AVIF, Apple ICNS, Apple ProRAW/DNG (read), PNG, JPEG, WebP, BMP, TIFF, GIF, ICO, PPM/PGM/PBM/XBM/XPM**, and vector **SVG/SVGZ** rasterization, with alpha flattening and ICC color space conversion (`sRGB`, `Adobe RGB`, `Display P3`, `ProPhoto RGB`). |
+| **Image Compressor** | Fine-grained quality (`1..100`) for **JPEG, PNG, WebP, HEIC, HEIF, and AVIF**, lossless mode where supported, target file size budget (KiB), and live original vs. compressed savings comparison. |
+| **Web Optimizer** | Responsive multi-width export (`320`, `640`, `960`, `1280`, `1920 px`) in **WebP, AVIF, HEIC, JPEG, or PNG** without upscaling, optional metadata stripping, and folder or ZIP export. |
+| **Favicon & Icon Generator** | Multi-resolution Windows `.ico` (`16, 32, 48, 256 px`), **macOS `.icns`** export, full PNG icon set (`16..512 px`), and PWA `site.webmanifest`. |
+| **Batch Processor** | Multi-threaded async pipeline (format conversion, resize, color adjustments, watermark, metadata, renaming) supporting **HEIC/HEIF/AVIF/ICNS/DNG**, JSON presets, live progress, and cooperative cancellation. |
 
-Consulta todos los detalles en [docs/performance-report.md](docs/performance-report.md) y [docs/test-report.md](docs/test-report.md).
+### Editing & Geometry
+| Tool | Highlights |
+| :--- | :--- |
+| **Crop & Straighten** | Interactive crop overlay with rule-of-thirds guides (`Free`, `1:1`, `3:4`, `4:3`, `16:9`, `9:16`, `2:3`, `3:2`, `21:9`, and custom ratios), `90°`/free-angle rotation, and horizontal/vertical flip. |
+| **Resize & Rotate** | Resize by pixels, percentage, or bounding box, aspect ratio lock, upscale prevention, and high-precision **Lanczos-3**, Bicubic, Bilinear, or Nearest interpolation (16-bit `RGBA64` and premultiplied alpha safe). |
+| **Color & Filters** | Rec.709 grayscale, B&W with Floyd-Steinberg dithering, sepia, invert, brightness, contrast, saturation, gamma, and linear-light exposure (EV) in 16-bit per channel precision. |
+| **Local Background Removal** | 100% local CPU segmentation (border-connected CIE L\*a\*b\* flood, Chroma Key, luminance threshold) with Gaussian edge feathering and transparency or solid color replacement. |
+| **Watermark** | Text or PNG logo overlays with 10 anchor positions (including tiled mode), opacity, scale, margins, and rotation. |
+
+### Composition & Documents
+| Tool | Highlights |
+| :--- | :--- |
+| **Combine & Collage** | Horizontal, vertical, grid, and mosaic layouts with margins, spacing, alignment, custom/transparent backgrounds, and aspect-ratio-preserving scaling. |
+| **Text, Frames & Borders** | Text overlays, outer padding, colored borders, and transparent rounded corners. |
+| **Images to PDF** | Local single-page and multi-page PDF generation (`ISO 32000-1`) with `A4`, `Letter`, `Legal`, `A3`, or *Fit to Image*, orientation, margins, and DPI control. |
+| **Animated GIF** | Built-in `GIF89a` encoder with per-frame delay, `NETSCAPE2.0` looping, optional dithering, and frame extraction to folder. |
+| **Spritesheets** | Pack multiple frames into a grid texture atlas and export the JSON coordinate map. |
+
+### Metadata & Utilities
+| Tool | Highlights |
+| :--- | :--- |
+| **Metadata Inspector & Cleaner** | Separates filesystem properties from embedded **EXIF, XMP, IPTC, ICC, and GPS** metadata; edits 15 fields, copies metadata between images, exports/imports schema-validated JSON (`photo26.metadata.v1`), strips all or selected categories (losslessly for JPEG/PNG/WebP and natively for **HEIC/HEIF/AVIF**), and supports batch updates. |
+| **Color Palette Extractor** | Deterministic k-means++ dominant color extraction with HEX/RGB codes, dominance ratios, and export to JSON, CSS variables, GIMP `.gpl`, or PNG swatches. |
+| **Visual Image Comparator** | Side-by-side, interactive *Before / After* split slider, overlay blend, visual diff map, and quantitative `MAE`, `RMSE`, and `PSNR` metrics. |
+| **Smart Mass Rename** | Pattern engine (`{name}`, `{num}`, `{date}`, `{width}`, `{height}`, `{ext}` — including dimensions probed from **HEIC/HEIF/AVIF**), prefix/suffix, find & replace, live preview, and conflict detection. |
 
 ---
 
-## Arquitectura del proyecto
+## Supported Formats & Transparent Scope
+
+| Format | Extensions | Read | Write | Alpha | Metadata (`EXIF`/`XMP`/`IPTC`/`ICC`) | Notes |
+| :--- | :--- | :---: | :---: | :---: | :---: | :--- |
+| **Apple HEIC** | `.heic`, `.heics` | **Yes** | **Yes** | **Yes** | EXIF · XMP · ICC | Bundled `libheif 1.19.7` + HEVC (`libde265`, `x265`, `kvazaar`), quality & lossless |
+| **HEIF / HIF** | `.heif`, `.hif`, `.heifs` | **Yes** | **Yes** | **Yes** | EXIF · XMP · ICC | Full ISO/IEC 23008-12 support across all tools |
+| **AVIF** | `.avif`, `.avis` | **Yes** | **Yes** | **Yes** | EXIF · XMP · ICC | Bundled AV1 (`dav1d`, `aom`, `svt-av1`, `rav1e`), quality & lossless |
+| **Apple ICNS** | `.icns` | **Yes** | **Yes** | **Yes** | — | Native macOS icon format (`qicns.dll`), multi-resolution |
+| **Apple ProRAW / DNG** | `.dng` | **Yes** | No | — | EXIF · XMP · IPTC · ICC | Extracts highest-resolution image frame & full metadata |
+| **JPEG** | `.jpg`, `.jpeg` | **Yes** | **Yes** | Flattened | EXIF · XMP · IPTC · ICC | Metadata edit/strip without re-encoding JPEG scan |
+| **PNG** | `.png` | **Yes** | **Yes** | **Yes** (8/16-bit) | EXIF · XMP · ICC | CRC-32 verified `eXIf`, `iTXt`, `iCCP`, `pHYs` chunks |
+| **WebP** | `.webp` | **Yes** | **Yes** | **Yes** | EXIF · XMP · ICC | Lossy and lossless encoding |
+| **TIFF** | `.tif`, `.tiff` | **Yes** | **Yes** | **Yes** | EXIF · XMP · IPTC · ICC | Direct IFD metadata stripping |
+| **GIF** | `.gif` | **Yes** | **Yes** | **Yes** (1-bit) | — | Built-in animated `GIF89a` encoder & frame extractor |
+| **Windows ICO** | `.ico` | **Yes** | **Yes** | **Yes** (32-bit) | — | Multi-resolution (`16..256 px`) + PWA bundle |
+| **BMP / Netpbm / X11** | `.bmp`, `.ppm`, `.pgm`, `.pbm`, `.xbm`, `.xpm` | **Yes** | **Yes** | Format-dependent | — | Lossless raster support |
+| **SVG / SVGZ** | `.svg`, `.svgz` | **Yes** | No | **Yes** | — | Vector rasterization via `QSvgRenderer`; never wraps bitmaps into fake SVG |
+| **PDF** | `.pdf` | No | **Yes** | Page fill | Document title | Single-page & multi-page PDF export (`ISO 32000-1`) |
+
+> **Honest scope notes:** Background removal runs 100% locally on CPU (no external ONNX model is bundled in the standard portable build). **OCR** is intentionally excluded.
+
+---
+
+## Verified Performance (Windows 11 x64)
+
+Measured natively on Windows 11 x64 (`AMD Ryzen 7 9800X3D`, Release portable build with clean `PATH=C:\Windows\System32;C:\Windows`):
+
+| Benchmark / Verification | Measured Result |
+| :--- | :--- |
+| Cold startup of `photo26.exe` (portable, clean `PATH`) | **`369 – 384 ms`** |
+| Idle memory after `1,500 ms` | **`113.35 MiB`** Working Set · **`51.06 MiB`** Private Commit |
+| Lanczos-3 Resize (`1920×1080 → 960×540`) | **`32 ms`** |
+| Full HD PNG load / WebP q85 save | **`72 ms`** / **`77 ms`** |
+| Web Optimizer (5 responsive WebP variants) | **`262 ms`** |
+| **20× Full HD parallel batch** (Lanczos-3 + 16-bit color + WebP, 4 threads) | **`713 ms`** (`35.6 ms/image`, `-73.9%` size, `+0.75 MiB` net RAM delta) |
+| Automated test suite (`CTest` + native Win32 `QtTest`, 11/11 blocks) | **`1.26 s`** (`100% PASS`) |
+| PE32+ dependency audit (`objdump -p`, 48 binaries, 296 import edges) | **`0` missing non-Windows DLLs** |
+
+---
+
+## Architecture
 
 ```mermaid
 flowchart LR
-    UI["photo26-desktop (Qt 6 Widgets)<br/>MainWindow · Canvas · ToolCardGrid · ExportBar"] --> CORE["photo26-core (C++20 STATIC)<br/>0 dependencias de Qt6::Widgets"]
+    UI["photo26-desktop (Qt 6 Widgets)<br/>MainWindow · Canvas · ToolCardGrid · ExportBar"] --> CORE["photo26-core (C++20 STATIC)<br/>0 Qt6::Widgets dependencies"]
+    CORE --> HEIF["libheif 1.19.7<br/>HEVC (libde265/x265/kvazaar) · AV1 (dav1d/aom/svt-av1/rav1e)"]
     TESTS["photo26-tests (QtTest + CTest)"] --> UI
     TESTS --> CORE
-    CLI["Futura photo26-cli (v2.0)"] -.-> CORE
+    CLI["Future photo26-cli (v2.0)"] -.-> CORE
 ```
 
 ```text
 Photo26/
 ├── CMakeLists.txt            # Targets: photo26-core, photo26-desktop-lib, photo26, photo26-tests
 ├── src/
-│   ├── core/                 # Motor C++20 desacoplado (common, io, metadata, color, ops)
-│   └── desktop/              # Interfaz Qt 6 Widgets (MainWindow y widgets interactivos)
-├── tests/                    # Suite automatizada unitaria, de formatos, metadatos y GUI
-├── docs/                     # Arquitectura, manual de usuario, pruebas, rendimiento y licencias
-├── vcpkg.json                # Manifiesto reproducible de dependencias
-└── conanfile.txt             # Alternativa reproducible Conan 2
+│   ├── core/                 # Decoupled C++20 engine (common, io/heif_codec, metadata, color, ops)
+│   └── desktop/              # Qt 6 Widgets UI (MainWindow, Canvas, ToolCardGrid, ExportBar, ThemeManager)
+├── tests/                    # Automated unit, format, Apple/HEIF, metadata & GUI test suite
+├── docs/                     # Architecture, user manual, test & performance reports, licenses
+├── vcpkg.json                # Reproducible vcpkg dependency manifest
+└── conanfile.txt             # Alternative Conan 2 manifest
 ```
 
 ---
 
-## Compilación desde el código fuente (Windows x64)
+## Building from Source (Windows x64)
 
-Requisitos: **Qt 6.8+ (`win64_mingw`)**, **MinGW-w64 GCC 13+ (C++20)**, **CMake 3.25+** y **Ninja**.
+Requirements: **Qt 6.8+ (`win64_mingw`)**, **MinGW-w64 GCC 13+ (C++20)**, **CMake 3.25+**, **Ninja**, and optionally **libheif (`PHOTO26_HEIF_ROOT`)** for native HEIC/HEIF/AVIF support.
 
 ```powershell
 cmake -S . -B build -G Ninja `
   -DCMAKE_BUILD_TYPE=Release `
-  -DCMAKE_PREFIX_PATH="C:\Ruta\A\Qt\6.8.3\mingw_64"
+  -DCMAKE_PREFIX_PATH="C:\Path\To\Qt\6.8.3\mingw_64" `
+  -DPHOTO26_HEIF_ROOT="C:\Path\To\heif\mingw64"
 
 cmake --build build --config Release
 ctest --test-dir build --output-on-failure
 ```
 
-Para generar el paquete portable autocontenido, despliega las bibliotecas con `windeployqt.exe --release --compiler-runtime`. Consulta la guía completa en [docs/build-instructions.md](docs/build-instructions.md).
+To build a self-contained portable folder, deploy Qt runtimes with `windeployqt.exe --release --compiler-runtime` and copy the `libheif` codec DLLs alongside `photo26.exe`. See [docs/build-instructions.md](docs/build-instructions.md) for full details.
 
 ---
 
-## Documentación y licencias
+## Documentation & Licenses
 
-- [Manual de usuario completo](docs/user-manual.md)
-- [Arquitectura técnica](docs/architecture.md)
-- [Matriz de funcionalidades y formatos](docs/feature-matrix.md)
-- [Informe de pruebas y verificación](docs/test-report.md)
-- [Informe de rendimiento y memoria](docs/performance-report.md)
-- [Instrucciones de compilación y empaquetado](docs/build-instructions.md)
-- [Dependencias](docs/dependencies.md) y [Licencias de terceros](docs/licenses.md) (Qt 6 bajo LGPL-3.0, MinGW-w64 / GCC Runtime Library Exception).
+- [User Manual](docs/user-manual.md)
+- [Technical Architecture](docs/architecture.md)
+- [Feature & Format Matrix](docs/feature-matrix.md)
+- [Test & Verification Report](docs/test-report.md)
+- [Performance & Memory Report](docs/performance-report.md)
+- [Build & Packaging Instructions](docs/build-instructions.md)
+- [Dependencies](docs/dependencies.md) & [Third-Party Licenses](docs/licenses.md) (Qt 6 under LGPL-3.0, `libheif`/`libde265` under LGPL-3.0, AV1/HEVC codec notices included in `licenses/`).
