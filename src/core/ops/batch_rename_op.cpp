@@ -1,5 +1,7 @@
 #include "batch_rename_op.hpp"
 #include "compress_web_op.hpp"
+#include "../io/heif_codec.hpp"
+#include "../io/image_io.hpp"
 #include <QtCore/QDateTime>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -41,6 +43,14 @@ std::vector<RenamePreviewItem> MassRenameOp::previewRename(const QStringList &pa
         QFileInfo f(paths[i]);
         QImageReader reader(paths[i]);
         QSize size = reader.size();
+        if (!size.isValid() && HeifCodec::isAvailable()) {
+            const QString suf = f.suffix().toLower();
+            if (suf == "heic" || suf == "heif" || suf == "hif" || suf == "heics" || suf == "heifs" || suf == "avif" || suf == "avis") {
+                if (auto probed = HeifCodec::probeSize(paths[i]); probed.isOk()) {
+                    size = *probed.value;
+                }
+            }
+        }
         QString ext = o.forceExtension.isEmpty() ? f.suffix() : o.forceExtension;
         if (ext.startsWith('.'))
             ext.remove(0, 1);
@@ -190,16 +200,16 @@ BatchSummary BatchProcessor::runBatch(const QStringList &paths, const QString &d
                         r.skipped = true;
                         r.errorMessage = "Cancelled";
                     } else if (r.errorMessage.isEmpty()) {
-                        QImageReader reader(r.sourcePath);
-                        reader.setAutoTransform(true);
-                        QSize size = reader.size();
-                        if (size.width() > 32768 || size.height() > 32768 ||
-                            1LL * size.width() * size.height() > 134217728) {
-                            r.errorMessage = "Input dimensions exceed limits";
+                        LoadOptions loadOpts;
+                        loadOpts.autoOrient = true;
+                        loadOpts.readMetadata = false;
+                        auto loaded = ImageIo::loadImage(r.sourcePath, loadOpts);
+                        if (!loaded.isOk()) {
+                            r.errorMessage = loaded.error.message;
                         } else {
-                            QImage image = reader.read();
+                            QImage image = std::move(loaded.value->image);
                             if (image.isNull())
-                                r.errorMessage = reader.errorString();
+                                r.errorMessage = "Empty decoded image";
                             else {
                                 auto apply = [&](Result<QImage> result) {
                                     if (!result.isOk()) {

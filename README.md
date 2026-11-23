@@ -12,7 +12,7 @@
 
 **19 herramientas fotográficas en una sola aplicación nativa**, inspirada en la simplicidad práctica de las cajas de herramientas de escritorio, sin nube, sin cuentas y sin sobrescribir tus archivos originales.
 
-[Descargar Portable v1.0.0](https://github.com/JaviBlzq/Photo26/releases/latest) · [Manual de usuario](docs/user-manual.md) · [Arquitectura](docs/architecture.md) · [Informe de pruebas](docs/test-report.md) · [Rendimiento](docs/performance-report.md)
+[Descargar Portable](https://github.com/JaviBlzq/Photo26/releases/latest) · [Manual de usuario](docs/user-manual.md) · [Arquitectura](docs/architecture.md) · [Informe de pruebas](docs/test-report.md) · [Rendimiento](docs/performance-report.md)
 
 </div>
 
@@ -22,7 +22,7 @@
 
 Photo26 se distribuye como **paquete portable autocontenido** — no requiere instalador, Qt SDK, Python ni permisos de administrador:
 
-1. Descarga **`Photo26-v1.0.0-win64-portable.zip`** desde la página de [Releases](https://github.com/JaviBlzq/Photo26/releases/latest).
+1. Descarga **`Photo26-v1.1.0-win64-portable.zip`** desde la página de [Releases](https://github.com/JaviBlzq/Photo26/releases/latest).
 2. Descomprime el archivo en cualquier carpeta (por ejemplo `C:\Photo26\`).
 3. Ejecuta **`photo26.exe`**.
 
@@ -47,10 +47,10 @@ Photo26 se distribuye como **paquete portable autocontenido** — no requiere in
 ### Conversión y optimización
 | Herramienta | Capacidades principales |
 | :--- | :--- |
-| **Convertir formato** | PNG, JPEG, WebP, BMP, TIFF, GIF, ICO, PPM/PGM/PBM/XBM/XPM, rasterización vectorial SVG/SVGZ, aplanado de transparencia y conversión de perfiles ICC (`sRGB`, `Adobe RGB`, `Display P3`, `ProPhoto RGB`). |
-| **Comprimir imagen** | Control de calidad (`1..100`), modo sin pérdida cuando el formato lo admite, tamaño objetivo aproximado en KiB y comparativa de peso original vs. final. |
-| **Optimizar para Web** | Generación responsive a `320`, `640`, `960`, `1280` y `1920 px` sin ampliaciones, limpieza de metadatos y exportación en carpeta o ZIP. |
-| **Generador de Favicon e ICO** | Contenedor `.ico` multi-resolución (`16, 32, 48, 256 px`), paquete completo de PNGs (`16..512 px`) y `site.webmanifest` PWA. |
+| **Convertir formato** | Apple HEIC, HEIF/HIF, AVIF, Apple ICNS, lectura Apple ProRAW/DNG, PNG, JPEG, WebP, BMP, TIFF, GIF, ICO, PPM/PGM/PBM/XBM/XPM, rasterización vectorial SVG/SVGZ, aplanado de transparencia y conversión de perfiles ICC (`sRGB`, `Adobe RGB`, `Display P3`, `ProPhoto RGB`). |
+| **Comprimir imagen** | Control de calidad (`1..100`) en JPEG, PNG, WebP, **HEIC**, **HEIF** y **AVIF**, modo sin pérdida cuando el formato lo admite, tamaño objetivo aproximado en KiB y comparativa de peso original vs. final. |
+| **Optimizar para Web** | Generación responsive a `320`, `640`, `960`, `1280` y `1920 px` en WebP, **AVIF**, **HEIC**, JPEG o PNG sin ampliaciones, limpieza de metadatos y exportación en carpeta o ZIP. |
+| **Generador de Favicon e ICO** | Contenedor `.ico` multi-resolución (`16, 32, 48, 256 px`), icono **Apple macOS (`.icns`)**, paquete completo de PNGs (`16..512 px`) y `site.webmanifest` PWA. |
 | **Procesamiento por lotes** | Tubería asíncrona multi-hilo (conversión, redimensionado, color, marca de agua, metadatos, renombrado), presets JSON, progreso y cancelación cooperativa. |
 
 ### Edición y geometría
@@ -85,6 +85,11 @@ Photo26 se distribuye como **paquete portable autocontenido** — no requiere in
 
 | Formato | Lectura | Escritura | Transparencia | Metadatos (`EXIF`/`XMP`/`IPTC`/`ICC`) | Notas |
 | :--- | :---: | :---: | :---: | :---: | :--- |
+| **Apple HEIC** (`.heic`, `.heics`) | **Sí** | **Sí** | **Sí** | EXIF · XMP · ICC | Nativo con `libheif 1.19.7` + HEVC (`libde265` / `x265` / `kvazaar`), calidad y lossless |
+| **HEIF / HIF** (`.heif`, `.hif`, `.heifs`) | **Sí** | **Sí** | **Sí** | EXIF · XMP · ICC | ISO/IEC 23008-12 completo en todas las herramientas |
+| **AVIF** (`.avif`, `.avis`) | **Sí** | **Sí** | **Sí** | EXIF · XMP · ICC | Nativo AV1 (`dav1d` / `aom` / `svt-av1` / `rav1e`), calidad y lossless |
+| **Apple ICNS** (`.icns`) | **Sí** | **Sí** | **Sí** | — | Iconos nativos de macOS (plugin `qicns`) |
+| **Apple ProRAW / DNG** (`.dng`) | **Sí** | No | — | EXIF · XMP · IPTC · ICC | Lectura del fotograma de mayor resolución y metadatos completos |
 | **JPEG** (`.jpg`, `.jpeg`) | Sí | Sí | Aplanado | EXIF · XMP · IPTC · ICC | Edición/limpieza sin recodificar el scan JPEG |
 | **PNG** (`.png`) | Sí | Sí | Sí (8/16 bits) | EXIF · XMP · ICC | Chunks `eXIf`, `iTXt`, `iCCP`, `pHYs` con CRC-32 |
 | **WebP** (`.webp`) | Sí | Sí | Sí | EXIF · XMP · ICC | Con pérdida y sin pérdida (`lossless`) |
@@ -94,7 +99,6 @@ Photo26 se distribuye como **paquete portable autocontenido** — no requiere in
 | **BMP / PPM / PGM / PBM / XBM / XPM** | Sí | Sí | Según formato | — | Sin pérdida |
 | **SVG / SVGZ** | Sí | No | Sí | — | Rasterización con `QSvgRenderer`; no envuelve bitmaps en falso SVG |
 | **PDF** | No | Sí | Fondo de página | Título | Exportación de 1 o varias imágenes (`ISO 32000-1`) |
-| **HEIC / HEIF / AVIF** | Condicional | Condicional | Sí | Según plugin | Detección nativa ISOBMFF; decodificación activa si hay plugin Qt/`libheif` en el sistema |
 
 > **Nota sobre eliminación de fondos:** La versión portable estándar v1.0 realiza la segmentación 100 % en CPU local (sin empaquetar modelos ONNX). **OCR** está expresamente excluido del alcance del proyecto.
 

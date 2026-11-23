@@ -24,12 +24,31 @@ find_package(Qt6 REQUIRED COMPONENTS
     Test
 )
 
+# Optional native libheif (HEIC / HEIF / HIF / AVIF support)
+set(PHOTO26_HEIF_ROOT "" CACHE PATH "Prefix containing include/libheif/heif.h and lib/libheif.dll.a")
+find_path(LIBHEIF_INCLUDE_DIR
+    NAMES libheif/heif.h
+    HINTS ${PHOTO26_HEIF_ROOT}/include "C:/Users/jblaz/.photo26-sdk/heif/mingw64/include"
+)
+find_library(LIBHEIF_LIBRARY
+    NAMES heif libheif libheif.dll
+    HINTS ${PHOTO26_HEIF_ROOT}/lib "C:/Users/jblaz/.photo26-sdk/heif/mingw64/lib"
+)
+if(LIBHEIF_INCLUDE_DIR AND LIBHEIF_LIBRARY)
+    message(STATUS "Photo26: libheif enabled (${LIBHEIF_LIBRARY})")
+    set(PHOTO26_HAS_LIBHEIF ON)
+else()
+    message(STATUS "Photo26: libheif not found; HEIC/HEIF/AVIF will fall back to runtime Qt plugins")
+    set(PHOTO26_HAS_LIBHEIF OFF)
+endif()
+
 # ==============================================================================
 # 1. photo26-core (STATIC library — ZERO dependency on Qt6::Widgets)
 # ==============================================================================
 add_library(photo26-core STATIC
     src/core/common/safe_file_writer.cpp
     src/core/io/format_registry.cpp
+    src/core/io/heif_codec.cpp
     src/core/io/image_io.cpp
     src/core/io/ico_codec.cpp
     src/core/io/gif_codec.cpp
@@ -59,6 +78,12 @@ target_link_libraries(photo26-core PUBLIC
     Qt6::Svg
     Qt6::PrintSupport
 )
+
+if(PHOTO26_HAS_LIBHEIF)
+    target_compile_definitions(photo26-core PUBLIC PHOTO26_HAS_LIBHEIF=1)
+    target_include_directories(photo26-core PRIVATE ${LIBHEIF_INCLUDE_DIR})
+    target_link_libraries(photo26-core PUBLIC ${LIBHEIF_LIBRARY})
+endif()
 
 # ==============================================================================
 # 2. photo26-desktop-lib & photo26 (WIN32 GUI Application)

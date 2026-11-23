@@ -38,9 +38,13 @@ const std::vector<FormatEntry>& supportedExportFormats() {
         {QStringLiteral("png"),  QStringLiteral("PNG (.png)"),   QStringLiteral("Imagen PNG (*.png)"), true, true},
         {QStringLiteral("jpg"),  QStringLiteral("JPEG (.jpg)"),  QStringLiteral("Imagen JPEG (*.jpg *.jpeg)"), true, false},
         {QStringLiteral("webp"), QStringLiteral("WebP (.webp)"), QStringLiteral("Imagen WebP (*.webp)"), true, true},
+        {QStringLiteral("heic"), QStringLiteral("Apple HEIC (.heic)"), QStringLiteral("Imagen Apple HEIC (*.heic *.heics)"), true, true},
+        {QStringLiteral("heif"), QStringLiteral("HEIF (.heif)"), QStringLiteral("Imagen HEIF (*.heif *.hif *.heifs)"), true, true},
+        {QStringLiteral("avif"), QStringLiteral("AVIF (.avif)"), QStringLiteral("Imagen AVIF (*.avif *.avis)"), true, true},
         {QStringLiteral("bmp"),  QStringLiteral("BMP (.bmp)"),   QStringLiteral("Mapa de bits BMP (*.bmp)"), false, true},
         {QStringLiteral("tiff"), QStringLiteral("TIFF (.tiff)"), QStringLiteral("Imagen TIFF (*.tiff *.tif)"), false, true},
         {QStringLiteral("ico"),  QStringLiteral("ICO (.ico)"),   QStringLiteral("Icono de Windows (*.ico)"), false, true},
+        {QStringLiteral("icns"), QStringLiteral("Apple ICNS (.icns)"), QStringLiteral("Icono de macOS (*.icns)"), false, true},
         {QStringLiteral("gif"),  QStringLiteral("GIF (.gif)"),   QStringLiteral("Imagen GIF (*.gif)"), false, false},
         {QStringLiteral("pdf"),  QStringLiteral("PDF (.pdf)"),   QStringLiteral("Documento PDF (*.pdf)"), true, false}
     };
@@ -53,6 +57,15 @@ QString normalizeExtensionToFormatId(const QString& extLower) {
     }
     if (extLower == QStringLiteral("tif") || extLower == QStringLiteral("tiff")) {
         return QStringLiteral("tiff");
+    }
+    if (extLower == QStringLiteral("heic") || extLower == QStringLiteral("heics")) {
+        return QStringLiteral("heic");
+    }
+    if (extLower == QStringLiteral("heif") || extLower == QStringLiteral("hif") || extLower == QStringLiteral("heifs")) {
+        return QStringLiteral("heif");
+    }
+    if (extLower == QStringLiteral("avif") || extLower == QStringLiteral("avis")) {
+        return QStringLiteral("avif");
     }
     for (const auto& f : supportedExportFormats()) {
         if (f.id == extLower) {
@@ -226,15 +239,18 @@ void ExportBarWidget::updateFormatDependentControls() {
         }
     }
 
-    losslessCheck_->setEnabled(supportsLossless && fmt == QStringLiteral("webp"));
+    const bool toggleableLossless =
+        fmt == QStringLiteral("webp") || fmt == QStringLiteral("heic") ||
+        fmt == QStringLiteral("heif") || fmt == QStringLiteral("avif");
+    losslessCheck_->setEnabled(supportsLossless && toggleableLossless);
     if (fmt == QStringLiteral("png") || fmt == QStringLiteral("bmp") ||
-        fmt == QStringLiteral("tiff") || fmt == QStringLiteral("ico")) {
+        fmt == QStringLiteral("tiff") || fmt == QStringLiteral("ico") || fmt == QStringLiteral("icns")) {
         losslessCheck_->setChecked(true);
     } else if (!supportsLossless) {
         losslessCheck_->setChecked(false);
     }
 
-    const bool qualityEditable = supportsQual && !(fmt == QStringLiteral("webp") && losslessCheck_->isChecked());
+    const bool qualityEditable = supportsQual && !(toggleableLossless && losslessCheck_->isChecked());
     qualityLabel_->setEnabled(qualityEditable);
     qualitySlider_->setEnabled(qualityEditable);
     qualitySpin_->setEnabled(qualityEditable);

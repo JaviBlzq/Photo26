@@ -23,6 +23,8 @@ public:
     static Result<ImageMetadata> importFromJson(const QByteArray& jsonBytes);
     static StatusResult batchUpdateMetadata(const QStringList& filePaths,const ImageMetadata& patchFields,const QStringList& fieldNamesToApply,QStringList* outWarnings = nullptr);
     static QStringList checkFormatCompatibilityWarnings(const QString& formatId,const ImageMetadata& metadata);
+    static QByteArray buildExifBytes(const ImageMetadata& metadata,QStringList* outWarnings = nullptr);
+    static QByteArray buildXmpBytes(const ImageMetadata& metadata);
     static QImage applyExifOrientation(const QImage& image,int orientation);
 };
 }

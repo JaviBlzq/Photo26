@@ -1,5 +1,6 @@
 #include "compress_web_op.hpp"
 #include "resize_op.hpp"
+#include "../io/heif_codec.hpp"
 #include <QtCore/QBuffer>
 #include <QtCore/QDir>
 #include <QtCore/QFileInfo>
@@ -16,6 +17,15 @@ Result<QByteArray> encode(const QImage &source, const QString &format, int quali
     QByteArray fmt = format.toLower().toLatin1();
     if (fmt == "jpeg")
         fmt = "jpg";
+    if (fmt == "hif" || fmt == "heifs")
+        fmt = "heif";
+    if (fmt == "heics")
+        fmt = "heic";
+    if (fmt == "avis")
+        fmt = "avif";
+    if ((fmt == "heic" || fmt == "heif" || fmt == "avif") && HeifCodec::isAvailable()) {
+        return HeifCodec::encodeToBytes(source, QString::fromLatin1(fmt), quality, lossless);
+    }
     if (!QImageWriter::supportedImageFormats().contains(fmt) &&
         !(fmt == "jpg" && QImageWriter::supportedImageFormats().contains("jpeg")))
         return Result<QByteArray>::failure(ErrorCode::UnsupportedFormat, "No encoder installed",

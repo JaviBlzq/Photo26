@@ -124,7 +124,7 @@ std::vector<ToolDescriptor> ToolCardGridWidget::allTools() {
         {
             QStringLiteral("convert"),
             QStringLiteral("Convertir formato"),
-            QStringLiteral("Convierte entre PNG, JPEG, WebP, BMP, TIFF e ICO con control de calidad."),
+            QStringLiteral("Convierte entre HEIC, HEIF, AVIF, ICNS, PNG, JPEG, WebP, BMP, TIFF e ICO."),
             catConv,
             toneConv,
             QStringLiteral("convertida")

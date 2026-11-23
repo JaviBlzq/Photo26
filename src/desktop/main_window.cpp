@@ -1,4 +1,5 @@
 #include "main_window.hpp"
+#include "../core/io/heif_codec.hpp"
 #include <QAction>
 #include <QApplication>
 #include <QClipboard>
@@ -408,6 +409,15 @@ namespace photo26::desktop {
         StatusResult emptyWorkspace() {
             return StatusResult::failure(ErrorCode::InvalidParameter, "Cargue una imagen antes de exportar");
         }
+        QImage decodePreviewBytes(const QByteArray& bytes) {
+            QImage img = QImage::fromData(bytes);
+            if (!img.isNull()) return img;
+            if (HeifCodec::isAvailable()) {
+                auto dec = HeifCodec::decodeFromBytes(bytes);
+                if (dec.isOk()) return std::move(dec.value->image);
+            }
+            return {};
+        }
     }
     // namespace
     MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
@@ -699,7 +709,7 @@ namespace photo26::desktop {
                 REAL(colorExposureSpin_,"Exposición (EV)",-5,5,0);
             } else if (id == "compress") {
                 COMBO(compFormatCombo_,"Formato",{
-                    "jpg","png","webp"
+                    "jpg","png","webp","heic","heif","avif"
                 });
                 SPIN(compQualitySpin_,"Calidad",1,100,80);
                 CHECK(compLosslessCheck_,"Sin pérdidas (si el formato lo permite)");
@@ -712,7 +722,7 @@ namespace photo26::desktop {
                 CHECK(web1280Check_,"1280 píxeles",true);
                 CHECK(web1920Check_,"1920 píxeles",true);
                 COMBO(webFormatCombo_,"Formato",{
-                    "webp","jpg","png"
+                    "webp","avif","heic","jpg","png"
                 });
                 SPIN(webQualitySpin_,"Calidad",1,100,82);
                 CHECK(webStripMetaCheck_,"Eliminar metadatos",true);
@@ -735,6 +745,12 @@ namespace photo26::desktop {
                     SaveOptions o=exportBar_->currentSaveOptions();
                     o.format="ico";
                     QString p=QFileDialog::getSaveFileName(this,"Guardar icono",ExportBarWidget::lastExportDirectory()+"/favicon.ico","Icono Windows (*.ico)");
+                    if(!p.isEmpty()) report(this,exportSingleProcessedToFile(p,o));
+                });
+                f.button("Guardar icono macOS (.icns)…",this,[this] {
+                    SaveOptions o=exportBar_->currentSaveOptions();
+                    o.format="icns";
+                    QString p=QFileDialog::getSaveFileName(this,"Guardar icono Apple ICNS",ExportBarWidget::lastExportDirectory()+"/icono.icns","Icono macOS (*.icns)");
                     if(!p.isEmpty()) report(this,exportSingleProcessedToFile(p,o));
                 });
             } else if (id == "metadata") {
@@ -1107,7 +1123,7 @@ namespace photo26::desktop {
                 f.button("Guardar originales renombrados en ZIP…",this,saveZip);
             } else if (id == "batch") {
                 COMBO(batchFormatCombo_,"Formato",{
-                    "webp","jpg","png","tiff","bmp","ico","gif","pdf"
+                    "webp","avif","heic","heif","jpg","png","tiff","bmp","ico","icns","gif","pdf"
                 });
                 SPIN(batchQualitySpin_,"Calidad",1,100,85);
                 CHECK(batchLosslessCheck_,"Sin pérdidas");
@@ -1308,8 +1324,9 @@ namespace photo26::desktop {
                 continue;
             }
             if(firstAdded<0)firstAdded=int(loadedItems_.size());
-            // Keep disk EXIF values intact for the metadata editor; orient only the pixels.
-            if(loaded.value->metadata.orientation>1)loaded.value->image=MetadataEngine::applyExifOrientation(loaded.value->image,loaded.value->metadata.orientation);
+            // Keep disk EXIF values intact for the metadata editor; orient only the pixels (libheif already handles HEIF/AVIF transforms).
+            const bool heifFmt=loaded.value->detectedFormat=="heic"||loaded.value->detectedFormat=="heif"||loaded.value->detectedFormat=="avif";
+            if(!heifFmt&&loaded.value->metadata.orientation>1)loaded.value->image=MetadataEngine::applyExifOrientation(loaded.value->image,loaded.value->metadata.orientation);
             loadedItems_.push_back(std::move(*loaded.value));
         }
         refreshFileListWidget();
@@ -1513,7 +1530,7 @@ namespace photo26::desktop {
                 exportBar_->setQuality(result.value->chosenQuality);
             }
             compMetricsLabel_->setText(QString("Original: %1 bytes\nComprimido: %2 bytes\nAhorro: %3 %\nCalidad elegida: %4").arg(result.value->originalBytes).arg(result.value->compressedBytes).arg(result.value->savingsPercent,0,'f',1).arg(result.value->chosenQuality));
-            QImage decoded=QImage::fromData(result.value->encodedBytes);
+            QImage decoded=decodePreviewBytes(result.value->encodedBytes);
             if(decoded.isNull())return Result<QImage>::failure(ErrorCode::CorruptedInput,"No se pudo previsualizar el resultado comprimido");
             return Result<QImage>::success(decoded);
         }
@@ -1524,7 +1541,7 @@ namespace photo26::desktop {
             for(const auto& v:*variants.value)lines<<QString("%1 — %2 × %3 — %4 bytes").arg(v.fileName).arg(v.actualSize.width()).arg(v.actualSize.height()).arg(v.byteSize);
             webSummaryLabel_->setText(lines.join('\n'));
             if(variants.value->empty())return Result<QImage>::failure(ErrorCode::InvalidParameter,"Seleccione al menos una variante");
-            return Result<QImage>::success(QImage::fromData(variants.value->front().encodedBytes));
+            return Result<QImage>::success(decodePreviewBytes(variants.value->front().encodedBytes));
         }
         if(id=="favicon"){
             auto bytes=IcoCodec::encodeMultiResolutionIco(image,{

@@ -1,6 +1,7 @@
 #include "metadata_engine.hpp"
 #include "../common/safe_file_writer.hpp"
 #include "../io/format_registry.hpp"
+#include "../io/heif_codec.hpp"
 #include <QBuffer>
 #include <QFile>
 #include <QFileInfo>
@@ -123,7 +124,8 @@ void inspectContainer(const QByteArray& b,const QString& format,ImageMetadata& m
         if(count && !invalid && int(icc.size())==count){for(int i=1;i<=count;++i)m.iccProfileBytes+=icc[i];}else if(count)w<<"Segmentos ICC incompletos o inconsistentes";
     }else if(format=="png"){if(!splitPng(b,parts)){w<<"Chunks PNG inválidos o CRC incorrecto";return;}for(const auto& s:parts){if(s.type=="eXIf")parseExif(s.data,m,w);else if(s.type=="iCCP"){auto z=s.data.indexOf(char(0));if(z>0&&z+2<=s.data.size()&&s.data[z+1]==0)m.iccProfileBytes=inflate(s.data.mid(z+2),&w);}else if(s.type=="pHYs"&&s.data.size()==9&&s.data[8]==1){m.dpiX=qRound(be32(s.data.constData())*0.0254);m.dpiY=qRound(be32(s.data.constData()+4)*0.0254);}else if(s.type=="tEXt"||s.type=="zTXt"||s.type=="iTXt"){auto t=pngText(s,&w);if(!t.valid)continue;if(t.key=="XML:com.adobe.xmp")parseXmp(t.text,m,w);else textTag(m,QString::fromLatin1(t.key),s.type=="iTXt"?QString::fromUtf8(t.text):QString::fromLatin1(t.text));}}
     }else if(format=="webp"){if(!splitWebp(b,parts)){w<<"RIFF WebP inválido";return;}for(const auto& s:parts){if(s.type=="EXIF")parseExif(s.data,m,w);else if(s.type=="XMP ")parseXmp(s.data,m,w);else if(s.type=="ICCP")m.iccProfileBytes=s.data;}}
-    else if(format=="tiff"){parseExif(b,m,w);Tiff t(b);if(t.valid){quint32 off=t.u32(4);if(t.range(off,2)&&t.range(quint64(off)+2,quint64(t.u16(off))*12+4))for(int i=0;i<t.u16(off);++i){quint32 e=off+2+12*i;auto tag=t.u16(e);if(tag==700)parseXmp(t.data(e),m,w);else if(tag==33723){auto data=t.data(e);parseIptc(data,m,w);}else if(tag==34377)parsePhotoshop(QByteArray("Photoshop 3.0\0",14)+t.data(e),m,w);}}}
+    else if(format=="tiff"||format=="dng"){parseExif(b,m,w);Tiff t(b);if(t.valid){quint32 off=t.u32(4);if(t.range(off,2)&&t.range(quint64(off)+2,quint64(t.u16(off))*12+4))for(int i=0;i<t.u16(off);++i){quint32 e=off+2+12*i;auto tag=t.u16(e);if(tag==700)parseXmp(t.data(e),m,w);else if(tag==33723){auto data=t.data(e);parseIptc(data,m,w);}else if(tag==34377)parsePhotoshop(QByteArray("Photoshop 3.0\0",14)+t.data(e),m,w);}}}
+    else if((format=="heic"||format=="heif"||format=="avif")&&HeifCodec::isAvailable()){auto blk=HeifCodec::extractMetadataBlocks(b);if(blk.isOk()){if(!blk.value->exifBytes.isEmpty())parseExif(blk.value->exifBytes,m,w);if(!blk.value->xmpBytes.isEmpty())parseXmp(blk.value->xmpBytes,m,w);if(!blk.value->iccBytes.isEmpty())m.iccProfileBytes=blk.value->iccBytes;}else w<<blk.error.message;}
     profileInfo(m,w);
 }
 struct ExifEntry{quint16 tag,type;quint32 count;QByteArray data;};
@@ -212,7 +214,8 @@ bool validMetadata(const ImageMetadata& m){return m.orientation>=1&&m.orientatio
 }
 Result<MetadataInspection> MetadataEngine::inspectFile(const QString& path){using R=Result<MetadataInspection>;auto bytes=readBytes(path);if(!bytes.isOk())return R::failure(bytes.error.code,bytes.error.message,bytes.error.detail);MetadataInspection result;QFileInfo fi(path);auto& p=result.fileProps;p.fileName=fi.fileName();p.filePath=fi.absoluteFilePath();p.fileSizeBytes=quint64(fi.size());p.createdIso=fi.birthTime().toString(Qt::ISODateWithMs);p.modifiedIso=fi.lastModified().toString(Qt::ISODateWithMs);p.detectedFormat=FormatRegistry::detectFormatFromHeader(bytes.value->left(65536),path);
     inspectContainer(*bytes.value,p.detectedFormat,result.embedded,result.warnings);
-    const QByteArray fmtHint = QImageReader::supportedImageFormats().contains(p.detectedFormat.toLatin1()) ? p.detectedFormat.toLatin1() : QByteArray();
+    if((p.detectedFormat=="heic"||p.detectedFormat=="heif"||p.detectedFormat=="avif")&&HeifCodec::isAvailable()){auto blk=HeifCodec::extractMetadataBlocks(*bytes.value);if(blk.isOk()){p.width=blk.value->dimensions.width();p.height=blk.value->dimensions.height();p.bitDepth=32;p.hasAlpha=blk.value->hasAlpha;}return R::success(result);}
+    const QByteArray fmtHint = QImageReader::supportedImageFormats().contains(p.detectedFormat.toLatin1()) ? p.detectedFormat.toLatin1() : (p.detectedFormat=="dng" ? QByteArray("tiff") : QByteArray());
     QImageReader reader(path, fmtHint);reader.setAutoTransform(false);QSize size=reader.size();if(size.isValid()){p.width=size.width();p.height=size.height();if(size.width()>32768||size.height()>32768||quint64(size.width())*size.height()>134217728){result.warnings<<"No se decodificaron propiedades de píxeles: dimensiones demasiado grandes";return R::success(result);}}
     QImage image=reader.read();if(!image.isNull()){p.width=image.width();p.height=image.height();p.bitDepth=image.depth();p.hasAlpha=image.hasAlphaChannel();for(const auto& key:image.textKeys())textTag(result.embedded,key,image.text(key));}
     else result.warnings<<"Qt no pudo decodificar los píxeles: "+reader.errorString();return R::success(result);
@@ -222,19 +225,23 @@ StatusResult MetadataEngine::stripSelectedMetadata(const QString& src,const QStr
     if(!o.stripExif&&!o.stripXmp&&!o.stripIptc&&!o.stripGps&&!o.stripIcc)clean=BytesResult::success(*bytes.value);
     else if(fmt=="jpg"||fmt=="png"||fmt=="webp")clean=transformContainer(*bytes.value,fmt,o,nullptr,nullptr);
     else if(fmt=="tiff")clean=stripTiff(*bytes.value,o);
-    else return StatusResult::failure(ErrorCode::UnsupportedFormat,"Limpieza selectiva sin recodificación disponible para JPEG, PNG, WebP y TIFF",fmt);
+    else if((fmt=="heic"||fmt=="heif"||fmt=="avif")&&HeifCodec::isAvailable()){auto dec=HeifCodec::decodeFromBytes(*bytes.value);if(!dec.isOk())return {dec.error};QByteArray exif=dec.value->exifBytes,xmp=dec.value->xmpBytes,icc=dec.value->iccBytes;if(o.stripExif)exif.clear();else if(o.stripGps&&!exif.isEmpty()){auto c=stripTiff(exif,{false,false,false,true,false});if(!c.isOk())return {c.error};exif=*c.value;}if(o.stripXmp)xmp.clear();else if(o.stripGps&&!xmp.isEmpty()){auto c=stripGpsXmp(xmp);if(!c.isOk())return {c.error};xmp=*c.value;}if(o.stripIcc){icc.clear();dec.value->image.setColorSpace(QColorSpace());}clean=HeifCodec::encodeToBytes(dec.value->image,fmt,95,false,exif,xmp,icc);}
+    else return StatusResult::failure(ErrorCode::UnsupportedFormat,"Limpieza selectiva disponible para JPEG, PNG, WebP, TIFF, HEIC, HEIF y AVIF",fmt);
     if(!clean.isOk())return {clean.error};return SafeFileWriter::writeBytes(dest,*clean.value,{overwrite,true});
 }
-QStringList MetadataEngine::checkFormatCompatibilityWarnings(const QString& format,const ImageMetadata& m){QStringList w;auto f=FormatRegistry::findFormat(format);QString id=f?f->id:format.toLower();bool rich=id=="jpg"||id=="png"||id=="webp";
+QStringList MetadataEngine::checkFormatCompatibilityWarnings(const QString& format,const ImageMetadata& m){QStringList w;auto f=FormatRegistry::findFormat(format);QString id=f?f->id:format.toLower();bool rich=id=="jpg"||id=="png"||id=="webp"||id=="heic"||id=="heif"||id=="avif";
     if(!rich)w<<"Este formato no admite en Photo26 escritura completa de EXIF, XMP, IPTC y GPS; algunos campos solo se conservarán como textos/DPI si Qt lo permite.";
-    if(id=="png"||id=="webp")w<<"IPTC IIM binario no se escribe en este formato; autor, título, descripción y palabras clave se conservan en XMP.";
+    if(id=="png"||id=="webp"||id=="heic"||id=="heif"||id=="avif")w<<"IPTC IIM binario no se escribe en este formato; autor, título, descripción y palabras clave se conservan en XMP.";
     if(!m.iccProfileBytes.isEmpty() && f && !f->supportsIcc)w<<"El formato de destino no garantiza conservar el perfil ICC.";
     if(!m.extraTags.empty())w<<"Las etiquetas adicionales se exportan a JSON; no se reconstruyen etiquetas binarias desconocidas al escribir metadatos.";
     return w;
 }
+QByteArray MetadataEngine::buildExifBytes(const ImageMetadata& m,QStringList* warnings){return buildExif(m,warnings);}
+QByteArray MetadataEngine::buildXmpBytes(const ImageMetadata& m){return buildXmp(m);}
 StatusResult MetadataEngine::writeMetadataToFile(const QString& path,const ImageMetadata& m,QStringList* warnings){if(!validMetadata(m))return StatusResult::failure(ErrorCode::InvalidParameter,"Orientación, DPI o coordenadas GPS inválidos");if(m.iccProfileBytes.size()>maxPacket)return StatusResult::failure(ErrorCode::MetadataIncompatible,"Perfil ICC demasiado grande");if(!m.iccProfileBytes.isEmpty()&&!QColorSpace::fromIccProfile(m.iccProfileBytes).isValid())return StatusResult::failure(ErrorCode::MetadataIncompatible,"Perfil ICC inválido o no compatible con Qt");auto bytes=readBytes(path);if(!bytes.isOk())return {bytes.error};QString fmt=FormatRegistry::detectFormatFromHeader(bytes.value->left(65536),path);if(warnings)*warnings<<checkFormatCompatibilityWarnings(fmt,m);
     if(fmt=="jpg"||fmt=="png"||fmt=="webp"){auto out=transformContainer(*bytes.value,fmt,{true,true,true,true,true},&m,warnings);if(!out.isOk())return {out.error};if(warnings)warnings->removeDuplicates();return SafeFileWriter::writeBytes(path,*out.value,{true,true});}
-    if(fmt=="gif"||fmt=="ico"){if(warnings)*warnings<<"GIF/ICO: EXIF, XMP, IPTC, ICC, textos y DPI no se escriben; el contenedor y sus fotogramas o resoluciones se conservan.";return StatusResult::success();}
+    if((fmt=="heic"||fmt=="heif"||fmt=="avif")&&HeifCodec::isAvailable()){auto dec=HeifCodec::decodeFromBytes(*bytes.value);if(!dec.isOk())return {dec.error};const QByteArray exif=buildExif(m,warnings),xmp=buildXmp(m);auto encoded=HeifCodec::encodeToBytes(dec.value->image,fmt,95,false,exif,xmp,m.iccProfileBytes);if(!encoded.isOk())return {encoded.error};if(warnings)warnings->removeDuplicates();return SafeFileWriter::writeBytes(path,*encoded.value,{true,true});}
+    if(fmt=="gif"||fmt=="ico"||fmt=="icns"){if(warnings)*warnings<<"GIF/ICO/ICNS: EXIF, XMP, IPTC, ICC, textos y DPI no se escriben; el contenedor y sus fotogramas o resoluciones se conservan.";return StatusResult::success();}
     QImage image;
     {
         const QByteArray fmtHint = QImageReader::supportedImageFormats().contains(fmt.toLatin1()) ? fmt.toLatin1() : QByteArray();

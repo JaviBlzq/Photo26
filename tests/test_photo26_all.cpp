@@ -9,6 +9,7 @@
 #include <atomic>
 #include <stdexcept>
 #include "../src/desktop/main_window.hpp"
+#include "../src/core/io/heif_codec.hpp"
 using namespace photo26::core;
 using namespace photo26::desktop;
 static void check(bool b, const char *label) { if (!b) throw std::runtime_error(label); }
@@ -489,6 +490,112 @@ private slots:
             QVERIFY(converted.isOk()); QVERIFY(converted.value->colorSpace().isValid());
             QCOMPARE(converted.value->size(),image.size());
         }
+    }
+    void appleAndHeifFormats() {
+        QVERIFY(HeifCodec::isAvailable());
+        QVERIFY(HeifCodec::canReadHeic());
+        QVERIFY(HeifCodec::canWriteHeic());
+        QVERIFY(HeifCodec::canReadAvif());
+        QVERIFY(HeifCodec::canWriteAvif());
+
+        QCOMPARE(FormatRegistry::detectFormatFromHeader("icns\0\0\0\x08", "icon.icns"), QString("icns"));
+        QCOMPARE(FormatRegistry::detectFormatFromHeader(QByteArray("II*\0", 4), "IMG_0001.DNG"), QString("dng"));
+
+        QTemporaryDir dir; QVERIFY(dir.isValid());
+        QImage alphaImg = solid(64, 64, QColor(45, 95, 138, 180));
+        alphaImg.setColorSpace(QColorSpace(QColorSpace::SRgb));
+
+        // 1. Round-trip HEIC, HEIF, AVIF, and Apple ICNS (preserving size & alpha)
+        for (const QString& fmt : {QString("heic"), QString("heif"), QString("avif"), QString("icns")}) {
+            SaveOptions opt;
+            opt.format = fmt;
+            opt.quality = 85;
+            opt.preserveTransparency = true;
+            const QString outPath = dir.filePath("apple_test." + fmt);
+            auto saved = ImageIo::saveImage(alphaImg, outPath, opt);
+            QVERIFY2(saved.isOk(), qPrintable(fmt + ": " + saved.error.message));
+            QVERIFY(QFileInfo(outPath).size() > 0);
+            auto loaded = ImageIo::loadImage(outPath);
+            QVERIFY2(loaded.isOk(), qPrintable(fmt + " load: " + loaded.error.message));
+            QVERIFY(!loaded.value->image.isNull());
+            if (fmt != "icns") {
+                QCOMPARE(loaded.value->image.size(), alphaImg.size());
+                QVERIFY(loaded.value->image.hasAlphaChannel());
+            }
+        }
+
+        // 2. Metadata EXIF + XMP + ICC round-trip and stripping on HEIC and AVIF
+        ImageMetadata meta;
+        meta.author = "Photo26 Apple Test";
+        meta.title = "iPhone Shot";
+        meta.description = "HEIC/AVIF metadata round-trip";
+        meta.copyright = "Copyright Photo26";
+        meta.gps = GpsCoordinate{40.4168, -3.7038, {}, true};
+        meta.iccProfileBytes = QColorSpace(QColorSpace::SRgb).iccProfile();
+        meta.colorProfileName = "sRGB";
+        for (const QString& fmt : {QString("heic"), QString("avif")}) {
+            const QString p = dir.filePath("meta_apple." + fmt);
+            SaveOptions opt; opt.format = fmt; opt.quality = 90; opt.preserveMetadata = true; opt.preserveIccProfile = true;
+            QVERIFY2(ImageIo::saveImage(alphaImg, p, opt, &meta).isOk(), qPrintable(fmt));
+            auto inspected = MetadataEngine::inspectFile(p);
+            QVERIFY2(inspected.isOk(), qPrintable(fmt + " inspect: " + inspected.error.message));
+            QCOMPARE(inspected.value->embedded.author, meta.author);
+            QCOMPARE(inspected.value->embedded.title, meta.title);
+            QVERIFY(inspected.value->embedded.gps.has_value());
+            QVERIFY(inspected.value->embedded.hasIcc);
+
+            const QString clean = dir.filePath("clean_apple." + fmt);
+            QVERIFY2(MetadataEngine::stripAllMetadata(p, clean).isOk(), qPrintable(fmt + " strip"));
+            auto afterStrip = MetadataEngine::inspectFile(clean);
+            QVERIFY(afterStrip.isOk());
+            QVERIFY(afterStrip.value->embedded.author.isEmpty());
+            QVERIFY(!afterStrip.value->embedded.gps.has_value());
+        }
+
+        // 3. Compression, Web Optimizer, Mass Rename {width}x{height}, and Batch on HEIC -> AVIF
+        const QString srcHeic = dir.filePath("iphone_photo.heic");
+        SaveOptions heicOpt; heicOpt.format = "heic"; heicOpt.quality = 85;
+        QVERIFY(ImageIo::saveImage(solid(128, 96, QColor(180, 90, 40)), srcHeic, heicOpt).isOk());
+
+        CompressionOptions compOpt; compOpt.format = "heic"; compOpt.quality = 75;
+        auto compHeic = CompressWebOp::compressInMemory(alphaImg, compOpt);
+        QVERIFY2(compHeic.isOk(), qPrintable(compHeic.error.message));
+        QVERIFY(compHeic.value->compressedBytes > 0);
+
+        WebOptimizerOptions webOpt; webOpt.format = "avif"; webOpt.widths = {32, 64}; webOpt.quality = 75;
+        auto avifVariants = CompressWebOp::generateWebVariants(alphaImg, "hero.heic", webOpt);
+        QVERIFY2(avifVariants.isOk(), qPrintable(avifVariants.error.message));
+        QCOMPARE(avifVariants.value->size(), size_t(2));
+
+        MassRenameOptions rn; rn.pattern = "apple-{width}x{height}";
+        auto rnPrev = MassRenameOp::previewRename({srcHeic}, rn, dir.filePath("renamed"));
+        QCOMPARE(rnPrev.size(), size_t(1));
+        QCOMPARE(rnPrev[0].proposedName, QString("apple-128x96.heic"));
+
+        BatchPreset bp; bp.outputFormat = "avif"; bp.quality = 75; bp.enableResize = true; bp.resizeOptions.targetWidth = 64;
+        auto batchRes = BatchProcessor::runBatch({srcHeic}, dir.filePath("batch_apple"), bp, false);
+        QCOMPARE(batchRes.succeeded, 1);
+        QVERIFY(QFileInfo(batchRes.itemResults[0].outputPath).exists());
+
+        // 4. Apple ProRAW / DNG (TIFF container) reading via ImageIo
+        const QString dngPath = dir.filePath("proraw_sample.dng");
+        QVERIFY(solid(80, 60, QColor(30, 140, 90)).save(dngPath, "TIFF"));
+        auto dngLoaded = ImageIo::loadImage(dngPath);
+        QVERIFY2(dngLoaded.isOk(), qPrintable(dngLoaded.error.message));
+        QCOMPARE(dngLoaded.value->detectedFormat, QString("dng"));
+        QCOMPARE(dngLoaded.value->image.size(), QSize(80, 60));
+
+        // 5. MainWindow loading HEIC and exporting to AVIF & ICNS
+        MainWindow window;
+        QVERIFY(window.loadFilesIntoWorkspace({srcHeic}));
+        window.activateTool("convert");
+        window.applyCurrentToolPreview();
+        SaveOptions avifOut; avifOut.format = "avif"; avifOut.quality = 80;
+        auto expAvif = window.exportSingleProcessedToFile(dir.filePath("from_ui.avif"), avifOut);
+        QVERIFY2(expAvif.isOk(), qPrintable(expAvif.error.message));
+        SaveOptions icnsOut; icnsOut.format = "icns";
+        auto expIcns = window.exportSingleProcessedToFile(dir.filePath("from_ui.icns"), icnsOut);
+        QVERIFY2(expIcns.isOk(), qPrintable(expIcns.error.message));
     }
     void widgetsAndWindow() {
         ToolCardGridWidget grid; auto tools=ToolCardGridWidget::allTools(); QCOMPARE(tools.size(),size_t(19));
